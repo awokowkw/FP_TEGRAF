@@ -10,9 +10,12 @@ Kelompok: 4
 
 <br>
 
-# Cara Penggunaan
+# Cara Penggunaan, Input, & Output
+> Knight's Tour
 
-# Input
+> LIS
 
-# Output
+Compile program LIS.py dan akan keluar output berupa GUI seperti berikut: 
+
+
 <img width="1789" height="916" alt="image" src="https://github.com/user-attachments/assets/a8d6b7a5-e227-4a60-b709-deeefc774c39" />
