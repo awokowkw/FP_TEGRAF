@@ -1,108 +1,213 @@
 import tkinter as tk
+from tkinter import messagebox
+import random
 
-N = 8
-CELL = 70
-PADDING = 30
+moves_x = [2, 1, -1, -2, -2, -1, 1, 2]
+moves_y = [1, 2,  2,  1, -1, -2, -2, -1]
 
-moves = [
-    (2, 1), (1, 2),
-    (-1, 2), (-2, 1),
-    (-2, -1), (-1, -2),
-    (1, -2), (2, -1)
-]
+def valid(x, y, board):
+    return (0 <= x < 8 and 0 <= y < 8 and board[x][y] == -1)
 
-def is_valid(x, y, board):
-    return 0 <= x < N and 0 <= y < N and board[x][y] == -1
+def get_degree(x, y, board):
+    deg = 0
+    for i in range(8):
+        nx = x + moves_x[i]
+        ny = y + moves_y[i]
+        if valid(nx, ny, board):
+            deg += 1
+    return deg
 
-def count_degree(x, y, board):
-    c = 0
-    for dx, dy in moves:
-        if is_valid(x + dx, y + dy, board):
-            c += 1
-    return c
+def knights_tour_open(start_x, start_y):
+    board = [[-1 for _ in range(8)] for _ in range(8)]
+    board[start_x][start_y] = 0
 
-def solve_tour(board, x, y, step, closed, start):
-    """Hybrid Warnsdorff + Backtracking"""
-    if step == N * N:
-        if closed:
-            sx, sy = start
-            return any((abs(x - (sx + dx)) == 0 and abs(y - (sy + dy)) == 0)
-                       or (abs(x - sx), abs(y - sy)) == (2, 1)
-                       for dx, dy in moves)
-        return True
+    x, y = start_x, start_y
 
-    next_moves = []
-    for dx, dy in moves:
-        nx, ny = x + dx, y + dy
-        if is_valid(nx, ny, board):
-            deg = count_degree(nx, ny, board)
-            next_moves.append((deg, nx, ny))
+    for step in range(1, 64):
+        min_deg = 9
+        nx, ny = -1, -1
 
-    next_moves.sort(key=lambda t: t[0])  # Warnsdorff
+        for i in range(8):
+            new_x = x + moves_x[i]
+            new_y = y + moves_y[i]
 
-    for _, nx, ny in next_moves:
+            if valid(new_x, new_y, board):
+                deg = get_degree(new_x, new_y, board)
+                if deg < min_deg:
+                    min_deg = deg
+                    nx, ny = new_x, new_y
+
+        if nx == -1:
+            return None
+
         board[nx][ny] = step
-        if solve_tour(board, nx, ny, step + 1, closed, start):
-            return True
-        board[nx][ny] = -1  # backtrack
+        x, y = nx, ny
 
-    return False
-
-def knights_tour(sx, sy, closed=False):
-    board = [[-1] * N for _ in range(N)]
-    board[sx][sy] = 0
-    solve_tour(board, sx, sy, 1, closed, (sx, sy))
     return board
 
-def draw_tour(board):
-    win = tk.Tk()
-    win.title("Knight's Tour")
 
-    size = N * CELL + PADDING*2
-    canvas = tk.Canvas(win, width=size, height=size, bg="white")
-    canvas.pack()
+def knights_tour_closed(start_x, start_y):
+    attempts = 0
 
-    for i in range(N+1):
-        canvas.create_line(PADDING, PADDING + i*CELL,
-                           PADDING + N*CELL, PADDING + i*CELL)
-        canvas.create_line(PADDING + i*CELL, PADDING,
-                           PADDING + i*CELL, PADDING + N*CELL)
+    while True:
+        attempts += 1
 
-    pos = {}
-    for r in range(N):
-        for c in range(N):
-            pos[board[r][c]] = (r, c)
+        board = [[-1 for _ in range(8)] for _ in range(8)]
+        board[start_x][start_y] = 0
 
-    for k in range(63):
-        r1, c1 = pos[k]
-        r2, c2 = pos[k+1]
+        x, y = start_x, start_y
 
-        x1 = PADDING + c1*CELL + CELL//2
-        y1 = PADDING + r1*CELL + CELL//2
-        x2 = PADDING + c2*CELL + CELL//2
-        y2 = PADDING + r2*CELL + CELL//2
+        dirs = list(range(8))
+        random.shuffle(dirs)
 
-        canvas.create_line(x1, y1, x2, y2, width=2)
+        valid_tour = True
 
-    r0, c0 = pos[0]
-    x0 = PADDING + c0*CELL + CELL//2
-    y0 = PADDING + r0*CELL + CELL//2
-    canvas.create_oval(x0-8, y0-8, x0+8, y0+8, fill="green")
+        for step in range(1, 64):
+            min_deg = 9
+            nx, ny = -1, -1
 
-    rE, cE = pos[63]
-    xE = PADDING + cE*CELL + CELL//2
-    yE = PADDING + rE*CELL + CELL//2
-    canvas.create_oval(xE-8, yE-8, xE+8, yE+8, fill="red")
+            random.shuffle(dirs)
+            for i in dirs:
+                new_x = x + moves_x[i]
+                new_y = y + moves_y[i]
 
-    win.mainloop()
+                if valid(new_x, new_y, board):
+                    deg = get_degree(new_x, new_y, board)
+                    if deg < min_deg:
+                        min_deg = deg
+                        nx, ny = new_x, new_y
 
-print("Knight's Tour (Hybrid Warnsdorff + Backtracking)")
-sx = int(input("Start row 0-7: "))
-sy = int(input("Start col 0-7: "))
+            if nx == -1:
+                valid_tour = False
+                break
 
-print("1. Open Tour")
-print("2. Closed Tour")
-mode = int(input("Mode (1/2): "))
+            board[nx][ny] = step
+            x, y = nx, ny
 
-board = knights_tour(sx, sy, closed=(mode == 2))
-draw_tour(board)
+        if not valid_tour:
+            continue
+
+        for i in range(8):
+            if (x + moves_x[i] == start_x and y + moves_y[i] == start_y):
+                print("Closed tour ditemukan setelah percobaan:", attempts)
+                return board
+
+
+class KnightGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Knight's Tour - Pilih Start")
+
+        self.canvas = tk.Canvas(root, width=640, height=640)
+        self.canvas.pack()
+
+        self.cell_size = 80
+        self.start_x = 0
+        self.start_y = 0
+
+        self.draw_board()
+
+        self.canvas.bind("<Button-1>", self.pick_start)
+
+        frame = tk.Frame(root)
+        frame.pack()
+
+        tk.Button(frame, text="Open Tour", command=self.run_open_tour,
+                  font=("Arial", 14), width=12).grid(row=0, column=0, padx=10)
+
+        tk.Button(frame, text="Closed Tour", command=self.run_closed_tour,
+                  font=("Arial", 14), width=12).grid(row=0, column=1, padx=10)
+
+    def draw_board(self):
+        self.canvas.delete("all")
+        colors = ["#D2B48C", "#8B5A2B"]
+
+        for r in range(8):
+            for c in range(8):
+                color = colors[(r + c) % 2]
+                x1 = c * self.cell_size
+                y1 = r * self.cell_size
+                x2 = x1 + self.cell_size
+                y2 = y1 + self.cell_size
+
+                self.canvas.create_rectangle(x1, y1, x2, y2,
+                                             fill=color, outline="black")
+
+        self.highlight_start()
+
+    def highlight_start(self):
+        self.canvas.delete("start")
+        x = self.start_y * self.cell_size + 40
+        y = self.start_x * self.cell_size + 40
+        self.canvas.create_oval(
+            x-20, y-20, x+20, y+20,
+            fill="skyblue", tags="start"
+        )
+
+    def pick_start(self, event):
+        col = event.x // self.cell_size
+        row = event.y // self.cell_size
+
+        self.start_x = row
+        self.start_y = col
+
+        self.draw_board()
+
+    def display_numbers(self, board):
+        self.canvas.delete("numbers")
+
+        for r in range(8):
+            for c in range(8):
+                step = board[r][c]
+                x = c * self.cell_size + 40
+                y = r * self.cell_size + 40
+                self.canvas.create_text(x, y, text=str(step),
+                                        font=("Arial", 14, "bold"),
+                                        fill="black", tags="numbers")
+
+    def draw_path(self, board):
+        self.canvas.delete("path")
+
+        coords = [None] * 64
+
+        for r in range(8):
+            for c in range(8):
+                step = board[r][c]
+                x = c * self.cell_size + 40
+                y = r * self.cell_size + 40
+                coords[step] = (x, y)
+
+        for i in range(63):
+            x1, y1 = coords[i]
+            x2, y2 = coords[i + 1]
+            self.canvas.create_line(x1, y1, x2, y2,
+                                    width=2, fill="black",
+                                    tags="path")
+
+    def run_open_tour(self):
+        self.draw_board()
+        board = knights_tour_open(self.start_x, self.start_y)
+
+        if board is None:
+            messagebox.showerror("Error", "Open Tour gagal ditemukan.")
+            return
+
+        self.display_numbers(board)
+        self.draw_path(board)
+
+    def run_closed_tour(self):
+        self.draw_board()
+        board = knights_tour_closed(self.start_x, self.start_y)
+
+        if board is None:
+            messagebox.showerror("Error", "Closed Tour gagal ditemukan.")
+            return
+
+        self.display_numbers(board)
+        self.draw_path(board)
+
+
+# Run GUI
+root = tk.Tk()
+KnightGUI(root)
+root.mainloop()
