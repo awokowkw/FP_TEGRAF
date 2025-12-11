@@ -19,3 +19,11 @@ Compile program LIS.py dan akan keluar output berupa GUI seperti berikut:
 
 
 <img width="1789" height="916" alt="image" src="https://github.com/user-attachments/assets/a8d6b7a5-e227-4a60-b709-deeefc774c39" />
+
+# Kesimpulan 
+
+-   Pada Knight's Tour, program mampu menelusuri seluruh kotak dengan
+    pola legal gerakan kuda menggunakan algoritma pencarian jalur.
+-   Pada LIS, program memanfaatkan pohon keputusan untuk mengevaluasi
+    seluruh subsequence meningkat, lalu memilih yang paling panjang
+    sebagai solusi.
